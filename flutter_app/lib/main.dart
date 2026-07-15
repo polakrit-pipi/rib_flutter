@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'theme/app_theme.dart';
 import 'widgets/ambient_background.dart';
 import 'screens/home_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const RibScannerApp());
@@ -34,7 +35,10 @@ class RibScannerApp extends StatelessWidget {
         error: AppColors.fail,
       ),
       scaffoldBackgroundColor: AppColors.bgDeep,
-      fontFamily: 'Roboto',
+      fontFamily: GoogleFonts.anuphan().fontFamily,
+      textTheme: GoogleFonts.anuphanTextTheme(
+      ThemeData.dark().textTheme,
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,

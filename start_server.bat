@@ -4,7 +4,7 @@ echo  Rib 9 Overlap Lung Scanner - Backend Startup
 echo =====================================================
 echo.
 
-set PYTHON=C:\Users\obey\miniconda3\envs\nsc\python.exe
+set PYTHON=C:\Python314\python.exe
 
 if not exist "%PYTHON%" (
     echo [ERROR] Python not found at: %PYTHON%

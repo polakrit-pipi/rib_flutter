@@ -97,33 +97,37 @@ abstract final class AppTextStyles {
     color: AppColors.textPrimary,
     fontSize: 26,
     fontWeight: FontWeight.w800,
-    letterSpacing: -0.5,
-    height: 1.15,
+    letterSpacing: 0.2,
+    height: 1.2,
   );
 
   static const title = TextStyle(
     color: AppColors.textPrimary,
     fontSize: 18,
     fontWeight: FontWeight.w700,
-    letterSpacing: -0.2,
+    letterSpacing: 0.1,
+    height: 1.25,
   );
 
   static const sectionLabel = TextStyle(
     color: AppColors.textSecondary,
     fontSize: 12,
     fontWeight: FontWeight.w600,
-    letterSpacing: 1.2,
+    letterSpacing: 1.0,
+    height: 1.3,
   );
 
   static const body = TextStyle(
     color: AppColors.textSecondary,
     fontSize: 14,
+    letterSpacing: 0.15,
     height: 1.55,
   );
 
   static const caption = TextStyle(
     color: AppColors.textMuted,
     fontSize: 12,
-    height: 1.4,
+    letterSpacing: 0.15,
+    height: 1.45,
   );
 }

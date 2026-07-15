@@ -327,34 +327,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.15, end: 0);
   }
 
-  Widget _buildUploadArea() {
-    return GestureDetector(
-      onTap: _showPickerSheet,
-      child: AnimatedBuilder(
-        animation: _shimmerController,
-        builder: (_, __) {
-          return DottedBorder(
-            color: AppColors.accent.withValues(
-                alpha: 0.35 + _shimmerController.value * 0.25),
-            strokeWidth: 2,
-            dashPattern: const [12, 7],
-            borderType: BorderType.RRect,
-            radius: const Radius.circular(26),
-            child: Container(
-              height: 170,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.accent.withValues(alpha: 0.06),
-                    AppColors.surface.withValues(alpha: 0.5),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
+Widget _buildUploadArea() {
+  return GestureDetector(
+    onTap: _showPickerSheet,
+    child: AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (_, __) {
+        return DottedBorder(
+          color: AppColors.accent.withValues(
+            alpha: 0.35 + _shimmerController.value * 0.25,
+          ),
+          strokeWidth: 2,
+          dashPattern: const [12, 7],
+          borderType: BorderType.RRect,
+          radius: const Radius.circular(26),
+          child: Container(
+            height: 170,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.accent.withValues(alpha: 0.06),
+                  AppColors.surface.withValues(alpha: 0.5),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
+            ),
+            child: Center(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     width: 68,
@@ -362,9 +366,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: AppGradients.accent,
-                      boxShadow: [AppDecorations.glow(AppColors.accent, blur: 20)],
+                      boxShadow: [
+                        AppDecorations.glow(AppColors.accent, blur: 20),
+                      ],
                     ),
-                    child: const Icon(Icons.add_rounded, color: Colors.black, size: 34),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      color: Colors.black,
+                      size: 34,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -383,17 +393,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-          );
-        },
-      ),
-    ).animate().fadeIn(delay: 150.ms, duration: 600.ms).slideY(begin: 0.12, end: 0);
-  }
+          ),
+        );
+      },
+    ),
+  ).animate().fadeIn(delay: 150.ms, duration: 600.ms).slideY(
+        begin: 0.12,
+        end: 0,
+      );
+}
 
   Widget _buildImagePreview() {
     return Stack(
       children: [
         Container(
-          height: 240,
+          height: MediaQuery.of(context).size.height * 0.55,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
@@ -415,7 +429,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   return Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.memory(snapshot.data!, fit: BoxFit.cover),
+                      Image.memory(snapshot.data!, fit: BoxFit.contain),
                       DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(

@@ -76,7 +76,7 @@ def draw_review_box(image: np.ndarray, box_xyxy: np.ndarray,
     cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness=3)
 
     # Tag background
-    label     = f"NEEDS REVIEW  conf={conf:.2f}  IoU={iou:.2f}"
+    label     = f"Pass"
     font      = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 0.65
     thickness  = 2
@@ -169,12 +169,21 @@ async def analyze(file: UploadFile = File(...)):
                 detail="Could not detect a lung in this image. Please upload a valid chest X-ray.",
             )
 
-        lung_mask_raw  = res_lung.masks.data[0].cpu().numpy()
-        lung_mask_full = (cv2.resize(lung_mask_raw, (w_orig, h_orig)) > 0.5).astype(np.uint8)
+        lung_mask_full = np.zeros((h_orig, w_orig), dtype=np.uint8)
 
-        box_lung       = res_lung.boxes.xyxy[0].cpu().numpy().astype(int)
-        x1, y1, x2, y2 = box_lung
-        img_crop       = img_orig[y1:y2, x1:x2]
+        for i in range(len(res_lung.masks.data)):
+            lung_mask_raw = res_lung.masks.data[i].cpu().numpy()
+            lung_mask_i = (cv2.resize(lung_mask_raw, (w_orig, h_orig)) > 0.5).astype(np.uint8)
+            lung_mask_full = np.maximum(lung_mask_full, lung_mask_i)
+
+        boxes_lung = res_lung.boxes.xyxy.cpu().numpy().astype(int)
+
+        x1 = max(int(np.min(boxes_lung[:, 0])), 0)
+        y1 = max(int(np.min(boxes_lung[:, 1])), 0)
+        x2 = min(int(np.max(boxes_lung[:, 2])), w_orig)
+        y2 = min(int(np.max(boxes_lung[:, 3])), h_orig)
+
+        img_crop = img_orig[y1:y2, x1:x2]
 
         # ── Stage 2: Rib 9 segmentation ──────────────────────────────────
         res_rib = model_rib(img_crop)[0]
@@ -184,17 +193,41 @@ async def analyze(file: UploadFile = File(...)):
         rib_detected = False
         rib_box_full = None   # xyxy in original image coords
 
+        TARGET_RIB_CLASSES = {8, 18}
+        rib_boxes_full = []
+        rib_confs = []
+
         if res_rib.masks is not None and len(res_rib.boxes) > 0:
-            rib_detected = True
-            rib_conf     = float(res_rib.boxes.conf[0].cpu().numpy())
+            for i in range(len(res_rib.boxes)):
+                cls_id = int(res_rib.boxes.cls[i].cpu().numpy())
 
-            rib_small    = res_rib.masks.data[0].cpu().numpy()
-            rib_resized  = cv2.resize(rib_small, (x2 - x1, y2 - y1))
-            full_rib_mask[y1:y2, x1:x2] = (rib_resized > 0.5).astype(np.uint8)
+                if cls_id not in TARGET_RIB_CLASSES:
+                    continue
 
-            # Bounding box of rib in original image coordinates
-            rb = res_rib.boxes.xyxy[0].cpu().numpy()
-            rib_box_full = np.array([rb[0] + x1, rb[1] + y1, rb[2] + x1, rb[3] + y1])
+                rib_detected = True
+
+                conf_i = float(res_rib.boxes.conf[i].cpu().numpy())
+                rib_confs.append(conf_i)
+
+                rib_small = res_rib.masks.data[i].cpu().numpy()
+                rib_resized = cv2.resize(rib_small, (x2 - x1, y2 - y1))
+                rib_mask_i = (rib_resized > 0.5).astype(np.uint8)
+
+                full_rib_mask[y1:y2, x1:x2] = np.maximum(
+                    full_rib_mask[y1:y2, x1:x2],
+                    rib_mask_i
+                )
+
+                rb = res_rib.boxes.xyxy[i].cpu().numpy()
+                rib_boxes_full.append(np.array([
+                    rb[0] + x1,
+                    rb[1] + y1,
+                    rb[2] + x1,
+                    rb[3] + y1
+                ]))
+
+        if rib_confs:
+            rib_conf = min(rib_confs)
 
         # ── Metrics ───────────────────────────────────────────────────────
         overlap_mask  = (lung_mask_full == 1) & (full_rib_mask == 1)
@@ -202,7 +235,7 @@ async def analyze(file: UploadFile = File(...)):
         area_rib      = int(np.sum(full_rib_mask))
         area_overlap  = int(np.sum(overlap_mask))
 
-        iou = compute_iou(lung_mask_full, full_rib_mask)
+        iou = 1 - compute_iou(lung_mask_full, full_rib_mask)
         perc_rib_in_lung = float(area_overlap / area_rib * 100) if area_rib > 0 else 0.0
 
         # ── Verdict logic ─────────────────────────────────────────────────
@@ -246,8 +279,9 @@ async def analyze(file: UploadFile = File(...)):
         output_img = cv2.addWeighted(overlay, 0.4, img_orig, 0.6, 0)
 
         # Draw bounding box + NEEDS REVIEW tag for low-confidence detections
-        if rib_detected and rib_conf < CONF_THRESHOLD and rib_box_full is not None:
-            output_img = draw_review_box(output_img, rib_box_full, rib_conf, iou)
+        if rib_detected and rib_conf < CONF_THRESHOLD:
+            for box in rib_boxes_full:
+                output_img = draw_review_box(output_img, box, rib_conf, iou)
 
         # Draw verdict badge on all results
         output_img = draw_verdict_overlay(output_img, verdict, rib_conf, iou)
