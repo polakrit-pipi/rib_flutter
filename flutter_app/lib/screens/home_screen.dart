@@ -590,13 +590,13 @@ Widget _buildUploadArea() {
           _CriteriaRow(
             icon: Icons.verified_rounded,
             color: AppColors.pass,
-            text: 'Conf ≥ 0.95 และ IoU > 0.85 → ผ่าน ใช้ภาพต่อได้',
+            text: 'Conf ≥ 0.89 และ IoU > 0.85 → ผ่าน ใช้ภาพต่อได้',
           ),
           const SizedBox(height: 10),
           _CriteriaRow(
             icon: Icons.block_rounded,
             color: AppColors.fail,
-            text: 'Conf ≥ 0.95 แต่ IoU ≤ 0.85 → ไม่ผ่าน',
+            text: 'Conf ≥ 0.89 แต่ IoU ≤ 0.85 → ไม่ผ่าน',
           ),
           const SizedBox(height: 10),
           _CriteriaRow(
