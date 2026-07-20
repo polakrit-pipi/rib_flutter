@@ -25,6 +25,7 @@ RESULT_TXT_PATH = Path(
 )
 
 OVERLAP_THRESHOLD = 0.85
+CONF_THRESHOLD = 0.89
 BOUNDARY_MARGIN_PX = 0
 
 IMAGE_EXTENSIONS = {
@@ -332,6 +333,8 @@ def predict_image(
         return {
             "verdict": "FAIL",
             "overlap_ratio": 0.0,
+            "left_conf": 0.0,
+            "right_conf": 0.0,
             "reason": "Lung not detected",
         }
 
@@ -377,6 +380,8 @@ def predict_image(
 
     rib_detected = False
     target_rib_classes = {8, 18}
+    left_conf = 0.0
+    right_conf = 0.0
 
     if (
         rib_result.masks is not None
@@ -399,7 +404,11 @@ def predict_image(
             if class_id not in target_rib_classes:
                 continue
 
-            rib_detected = True
+            confidence = float(
+                rib_result.boxes.conf[index]
+                .cpu()
+                .item()
+            )
 
             raw_rib_mask = (
                 rib_result.masks.data[index]
@@ -415,12 +424,24 @@ def predict_image(
             ).astype(np.uint8)
 
             if class_id == 8:
+                rib_detected = True
+                left_conf = max(
+                    left_conf,
+                    confidence,
+                )
+
                 rib_mask_class_8 = np.maximum(
                     rib_mask_class_8,
                     resized_rib_mask,
                 )
 
             elif class_id == 18:
+                rib_detected = True
+                right_conf = max(
+                    right_conf,
+                    confidence,
+                )
+
                 rib_mask_class_18 = np.maximum(
                     rib_mask_class_18,
                     resized_rib_mask,
@@ -430,6 +451,8 @@ def predict_image(
         return {
             "verdict": "FAIL",
             "overlap_ratio": 0.0,
+            "left_conf": left_conf,
+            "right_conf": right_conf,
             "reason": "Rib 9 not detected",
         }
 
@@ -468,9 +491,9 @@ def predict_image(
     return {
         "verdict": verdict,
         "overlap_ratio": overlap_ratio,
-        "reason": (
-            f"Overlap {overlap_ratio:.4f}"
-        ),
+        "left_conf": left_conf,
+        "right_conf": right_conf,
+        "reason": f"Overlap {overlap_ratio:.4f}",
     }
 
 
@@ -526,6 +549,13 @@ def evaluate_folder(
                 "overlap_ratio"
             ]
 
+            left_conf = prediction["left_conf"]
+            right_conf = prediction["right_conf"]
+            low_conf = (
+                left_conf < CONF_THRESHOLD
+                or right_conf < CONF_THRESHOLD
+            )
+
             is_correct = (
                 verdict == expected_verdict
             )
@@ -538,6 +568,9 @@ def evaluate_folder(
                     "filename": image_path.name,
                     "verdict": verdict,
                     "overlap": overlap,
+                    "left_conf": left_conf,
+                    "right_conf": right_conf,
+                    "low_conf": low_conf,
                     "correct": is_correct,
                     "error": None,
                 }
@@ -547,7 +580,9 @@ def evaluate_folder(
                 f"[{index}/{len(image_paths)}] "
                 f"{image_path.name}: "
                 f"{verdict} "
-                f"(overlap={overlap:.4f})"
+                f"(overlap={overlap:.4f}, "
+                f"left_conf={left_conf:.4f}, "
+                f"right_conf={right_conf:.4f})"
             )
 
         except Exception as exc:
@@ -556,6 +591,9 @@ def evaluate_folder(
                     "filename": image_path.name,
                     "verdict": "ERROR",
                     "overlap": 0.0,
+                    "left_conf": 0.0,
+                    "right_conf": 0.0,
+                    "low_conf": True,
                     "correct": False,
                     "error": str(exc),
                 }
@@ -610,6 +648,27 @@ def save_results_txt(
         if total_images > 0
         else 0.0
     )
+    
+    all_results = (
+        full_result["results"]
+        + not_full_result["results"]
+    )
+
+    results_without_low_conf = [
+        result
+        for result in all_results
+        if not result["low_conf"]
+    ]
+
+    correct_without_low_conf = sum(
+        1
+        for result in results_without_low_conf
+        if result["correct"]
+    )
+
+    total_without_low_conf = len(
+        results_without_low_conf
+    )
 
     lines = [
         "RIB 9 EVALUATION RESULT",
@@ -643,6 +702,11 @@ def save_results_txt(
             "OVERALL ACCURACY: "
             f"{overall_accuracy:.2f}%"
         ),
+        (
+            "OVERALL WITHOUT LOW CONF: "
+            f"{correct_without_low_conf} "
+            f"from {total_without_low_conf}"
+        ),
         "",
         "=" * 60,
         "FULL DETAILS",
@@ -650,11 +714,22 @@ def save_results_txt(
     ]
 
     for result in full_result["results"]:
+        result_status = (
+            "CORRECT"
+            if result["correct"]
+            else "WRONG"
+        )
+
+        if result["low_conf"]:
+            result_status += " (LOW CONF)"
+
         line = (
             f"{result['filename']} | "
             f"{result['verdict']} | "
             f"overlap={result['overlap']:.4f} | "
-            f"{'CORRECT' if result['correct'] else 'WRONG'}"
+            f"left_conf={result['left_conf']:.4f} | "
+            f"right_conf={result['right_conf']:.4f} | "
+            f"{result_status}"
         )
 
         if result["error"]:
@@ -674,11 +749,22 @@ def save_results_txt(
     )
 
     for result in not_full_result["results"]:
+        result_status = (
+            "CORRECT"
+            if result["correct"]
+            else "WRONG"
+        )
+
+        if result["low_conf"]:
+            result_status += " (LOW CONF)"
+
         line = (
             f"{result['filename']} | "
             f"{result['verdict']} | "
             f"overlap={result['overlap']:.4f} | "
-            f"{'CORRECT' if result['correct'] else 'WRONG'}"
+            f"left_conf={result['left_conf']:.4f} | "
+            f"right_conf={result['right_conf']:.4f} | "
+            f"{result_status}"
         )
 
         if result["error"]:
