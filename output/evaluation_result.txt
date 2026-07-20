@@ -1,0 +1,119 @@
+RIB 9 EVALUATION RESULT
+============================================================
+
+FULL folder: PASS 42 from 50
+FULL accuracy: 84.00%
+
+NOT FULL folder: FAIL 45 from 50
+NOT FULL accuracy: 90.00%
+
+OVERALL SUCCESS: 87 from 100
+OVERALL ACCURACY: 87.00%
+
+============================================================
+FULL DETAILS
+============================================================
+151.png | PASS | overlap=0.9685 | CORRECT
+152.png | PASS | overlap=0.9519 | CORRECT
+153.png | PASS | overlap=0.9041 | CORRECT
+154.png | FAIL | overlap=0.8481 | WRONG
+155.png | PASS | overlap=0.8909 | CORRECT
+156.png | PASS | overlap=0.9207 | CORRECT
+157.png | PASS | overlap=0.9293 | CORRECT
+158.png | PASS | overlap=0.9077 | CORRECT
+159.png | FAIL | overlap=0.8074 | WRONG
+160.png | FAIL | overlap=0.8408 | WRONG
+161.png | PASS | overlap=0.8634 | CORRECT
+162.png | FAIL | overlap=0.6717 | WRONG
+163.png | PASS | overlap=0.9546 | CORRECT
+164.png | PASS | overlap=0.9322 | CORRECT
+165.png | PASS | overlap=0.8944 | CORRECT
+166.png | PASS | overlap=0.9466 | CORRECT
+167.png | FAIL | overlap=0.5840 | WRONG
+168.png | PASS | overlap=0.9549 | CORRECT
+169.png | PASS | overlap=0.9947 | CORRECT
+170.png | PASS | overlap=0.9316 | CORRECT
+171.png | PASS | overlap=0.9457 | CORRECT
+172.png | FAIL | overlap=0.8448 | WRONG
+173.png | PASS | overlap=0.9400 | CORRECT
+174.png | PASS | overlap=0.9067 | CORRECT
+175.png | PASS | overlap=0.9227 | CORRECT
+176.png | PASS | overlap=0.9260 | CORRECT
+177.png | PASS | overlap=0.9751 | CORRECT
+178.png | PASS | overlap=0.9365 | CORRECT
+179.png | PASS | overlap=0.9477 | CORRECT
+180.png | PASS | overlap=0.9882 | CORRECT
+181.png | PASS | overlap=0.9473 | CORRECT
+182.png | PASS | overlap=0.9565 | CORRECT
+183.png | PASS | overlap=0.9161 | CORRECT
+184.png | PASS | overlap=0.9408 | CORRECT
+185.png | PASS | overlap=0.9732 | CORRECT
+186.png | PASS | overlap=0.9523 | CORRECT
+187.png | PASS | overlap=0.9396 | CORRECT
+188.png | PASS | overlap=0.9520 | CORRECT
+189.png | PASS | overlap=0.8770 | CORRECT
+190.png | PASS | overlap=0.9633 | CORRECT
+191.png | PASS | overlap=0.9636 | CORRECT
+192.png | PASS | overlap=0.9513 | CORRECT
+193.png | PASS | overlap=0.9217 | CORRECT
+194.png | PASS | overlap=0.9827 | CORRECT
+195.png | PASS | overlap=0.9497 | CORRECT
+196.png | FAIL | overlap=0.8239 | WRONG
+197.png | PASS | overlap=0.9821 | CORRECT
+198.png | PASS | overlap=0.9644 | CORRECT
+199.png | FAIL | overlap=0.8105 | WRONG
+200.png | PASS | overlap=0.9338 | CORRECT
+
+============================================================
+NOT FULL DETAILS
+============================================================
+051.png | FAIL | overlap=0.4497 | CORRECT
+052.png | FAIL | overlap=0.4416 | CORRECT
+053.png | FAIL | overlap=0.2612 | CORRECT
+054.png | FAIL | overlap=0.7513 | CORRECT
+055.png | FAIL | overlap=0.4373 | CORRECT
+056.png | FAIL | overlap=0.5906 | CORRECT
+057.png | FAIL | overlap=0.2486 | CORRECT
+058.png | FAIL | overlap=0.2328 | CORRECT
+059.png | FAIL | overlap=0.7126 | CORRECT
+060.png | FAIL | overlap=0.6890 | CORRECT
+061.png | FAIL | overlap=0.0465 | CORRECT
+062.png | FAIL | overlap=0.7879 | CORRECT
+063.png | FAIL | overlap=0.1412 | CORRECT
+064.png | FAIL | overlap=0.5795 | CORRECT
+065.png | FAIL | overlap=0.8107 | CORRECT
+066.png | PASS | overlap=0.8606 | WRONG
+067.png | PASS | overlap=0.8962 | WRONG
+068.png | FAIL | overlap=0.8183 | CORRECT
+069.png | FAIL | overlap=0.2394 | CORRECT
+070.png | FAIL | overlap=0.6514 | CORRECT
+071.png | FAIL | overlap=0.6297 | CORRECT
+072.png | PASS | overlap=0.8990 | WRONG
+073.png | PASS | overlap=0.8528 | WRONG
+074.png | FAIL | overlap=0.3454 | CORRECT
+075.png | FAIL | overlap=0.3566 | CORRECT
+076.png | FAIL | overlap=0.5257 | CORRECT
+077.png | FAIL | overlap=0.4065 | CORRECT
+078.png | FAIL | overlap=0.4771 | CORRECT
+079.png | FAIL | overlap=0.3999 | CORRECT
+080.png | FAIL | overlap=0.8339 | CORRECT
+081.png | FAIL | overlap=0.4859 | CORRECT
+082.png | FAIL | overlap=0.6146 | CORRECT
+083.png | FAIL | overlap=0.5918 | CORRECT
+084.png | FAIL | overlap=0.6135 | CORRECT
+085.png | FAIL | overlap=0.3477 | CORRECT
+086.png | FAIL | overlap=0.6495 | CORRECT
+087.png | FAIL | overlap=0.5907 | CORRECT
+088.png | FAIL | overlap=0.6814 | CORRECT
+089.png | FAIL | overlap=0.4590 | CORRECT
+090.png | FAIL | overlap=0.4872 | CORRECT
+091.png | FAIL | overlap=0.7150 | CORRECT
+092.png | FAIL | overlap=0.7710 | CORRECT
+093.png | FAIL | overlap=0.7204 | CORRECT
+094.png | FAIL | overlap=0.6334 | CORRECT
+095.png | PASS | overlap=0.8760 | WRONG
+096.png | FAIL | overlap=0.3759 | CORRECT
+097.png | FAIL | overlap=0.7322 | CORRECT
+098.png | FAIL | overlap=0.7018 | CORRECT
+099.png | FAIL | overlap=0.5337 | CORRECT
+100.png | FAIL | overlap=0.7437 | CORRECT
