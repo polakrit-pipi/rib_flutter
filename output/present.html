@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สรุปผลการทดสอบโมเดล R9 / L9</title>
+<style>
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f5f7fb;
+    color:#172033;
+  }
+  .page{
+    max-width:920px;
+    margin:40px auto;
+    padding:0 20px;
+  }
+  .card{
+    background:#fff;
+    border-radius:18px;
+    padding:28px;
+    box-shadow:0 10px 30px rgba(0,0,0,.07);
+    margin-bottom:18px;
+  }
+  h1{
+    margin:0 0 8px;
+    font-size:30px;
+  }
+  .sub{
+    color:#667085;
+    margin:0;
+  }
+  .metrics{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-top:22px;
+  }
+  .metric{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:18px;
+    text-align:center;
+  }
+  .metric strong{
+    display:block;
+    font-size:30px;
+    color:#2563eb;
+  }
+  .metric span{
+    font-size:13px;
+    color:#667085;
+  }
+  h2{
+    font-size:20px;
+    margin:0 0 12px;
+  }
+  p{
+    line-height:1.7;
+    margin:8px 0;
+  }
+  .highlight{
+    background:#eff6ff;
+    border-left:4px solid #2563eb;
+    padding:14px 16px;
+    border-radius:10px;
+  }
+  .evidence{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:16px;
+    font-family:Consolas,monospace;
+    font-size:14px;
+    line-height:1.7;
+  }
+  .good{color:#15803d;font-weight:700}
+  .warn{color:#b45309;font-weight:700}
+  .footer{
+    color:#667085;
+    font-size:13px;
+    text-align:center;
+    margin-top:12px;
+  }
+  @media(max-width:760px){
+    .metrics{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:460px){
+    .metrics{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="card">
+    <h1>สรุปผลการทดสอบโมเดลตรวจ R9 / L9</h1>
+    <p class="sub">ประเมินจากภาพ X-ray จำนวน 100 ภาพ แบ่งเป็น FULL 50 ภาพ และ NOT FULL 50 ภาพ</p>
+
+    <div class="metrics">
+      <div class="metric">
+        <strong>87%</strong>
+        <span>ความแม่นยำรวม</span>
+      </div>
+      <div class="metric">
+        <strong>84%</strong>
+        <span>FULL</span>
+      </div>
+      <div class="metric">
+        <strong>90%</strong>
+        <span>NOT FULL</span>
+      </div>
+      <div class="metric">
+        <strong>90.24%</strong>
+        <span>เมื่อตัด Low Conf ออก</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>ภาพรวมประสิทธิภาพของโมเดล</h2>
+    <p>
+      โมเดลสามารถจำแนกภาพได้ถูกต้อง <span class="good">87 จาก 100 ภาพ</span>
+      โดยทำได้ดีในกลุ่ม NOT FULL ที่ความแม่นยำ 90% และกลุ่ม FULL ที่ 84%
+    </p>
+    <p>
+      พบภาพที่มี confidence ต่ำกว่า 0.89 จำนวน 18 ภาพ
+      และเมื่อไม่นำภาพกลุ่มนี้มาคำนวณ ความแม่นยำเพิ่มเป็น
+      <span class="good">90.24%</span>
+    </p>
+
+    <div class="highlight">
+      สรุปคือ โมเดลมีประสิทธิภาพดีพอสำหรับช่วยคัดกรองเบื้องต้น
+      และควรส่งภาพที่มี confidence ต่ำไปตรวจซ้ำ แทนการให้ระบบตัดสินอัตโนมัติ
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>หลักฐานจากผลทดสอบ</h2>
+    <div class="evidence">
+FULL folder: PASS 42 from 50<br>
+FULL accuracy: 84.00%<br><br>
+
+NOT FULL folder: FAIL 45 from 50<br>
+NOT FULL accuracy: 90.00%<br><br>
+
+OVERALL SUCCESS: 87 from 100<br>
+OVERALL ACCURACY: 87.00%<br>
+LOW CONF: 18%<br>
+OVERALL WITHOUT LOW CONF: 90.24%
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>ประสิทธิภาพของแอป</h2>
+    <p>
+      แอปสามารถรับภาพ X-ray แล้วแสดงผลการวิเคราะห์ได้ทั้ง
+      <b>PASS / FAIL</b>, ค่า overlap และค่า confidence ของ R9 กับ L9
+    </p>
+    <p>
+      นอกจากนี้ยังสามารถระบุกรณี <span class="warn">Low Confidence</span>
+      เพื่อช่วยให้ผู้ใช้รู้ว่าภาพใดควรตรวจสอบซ้ำ
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>สาเหตุของผลทำนายผิด</h3>
+<p>
+  ผลทำนายที่ผิดส่วนหนึ่งเกิดจากโมเดลยังตรวจจับตำแหน่งซี่โครงได้ไม่แม่นยำ
+  เนื่องจากปริมาณ Dataset สำหรับฝึกโมเดลยังมีจำกัด ทำให้บางภาพได้ Mask
+  ของซี่โครงที่ผิดรูปหรือมีส่วนเกิน
+</p>
+<p>
+  อีกสาเหตุหนึ่งคือ ในบางภาพขอบปอดด้านในมีลักษณะเว้าหรือหักมุมมาก
+  ทำให้ระบบตัดส่วนของซี่โครงที่เกินเข้ามาด้านในปอดออกได้ไม่ครบถ้วน
+  จึงส่งผลต่อค่า Overlap และผลการตัดสิน PASS หรือ FAIL
+</p>
+  </div>
+
+  <div class="footer">
+    สรุปจาก evaluation_result.txt และข้อมูล confidence ของโมเดล
+  </div>
+
+  
+
+</div>
+</body>
+</html>

@@ -9,8 +9,8 @@ NOT FULL accuracy: 90.00%
 
 OVERALL SUCCESS: 87 from 100
 OVERALL ACCURACY: 87.00%
-OVERALL WITHOUT LOW CONF: 74 from 82
-= 90.24%
+LOW CONF: 18%
+OVERALL WITHOUT LOW CONF: 90.24% (74 from 82)
 
 ============================================================
 FULL DETAILS
