@@ -1,7 +1,5 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'theme/app_theme.dart';
-import 'widgets/ambient_background.dart';
 import 'screens/home_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -23,46 +21,106 @@ class RibScannerApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.accent,
-        secondary: AppColors.accentPurple,
-        surface: AppColors.surface,
-        surfaceContainerHighest: AppColors.surfaceElevated,
-        onSurface: AppColors.textPrimary,
-        error: AppColors.fail,
+  final baseTextTheme = GoogleFonts.anuphanTextTheme(
+    ThemeData.light().textTheme,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.light,
+
+    colorScheme: const ColorScheme.light(
+      primary: AppColors.accent,
+      secondary: AppColors.accentBlue,
+      surface: AppColors.surface,
+      onSurface: AppColors.textPrimary,
+      error: AppColors.fail,
+    ),
+
+    scaffoldBackgroundColor: AppColors.bgBase,
+
+    fontFamily: GoogleFonts.anuphan().fontFamily,
+    textTheme: baseTextTheme.apply(
+      bodyColor: AppColors.textPrimary,
+      displayColor: AppColors.textPrimary,
+    ),
+
+    appBarTheme: const AppBarTheme(
+      backgroundColor: AppColors.surface,
+      foregroundColor: AppColors.textPrimary,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      titleTextStyle: AppTextStyles.title,
+      iconTheme: IconThemeData(
+        color: AppColors.textSecondary,
       ),
-      scaffoldBackgroundColor: AppColors.bgDeep,
-      fontFamily: GoogleFonts.anuphan().fontFamily,
-      textTheme: GoogleFonts.anuphanTextTheme(
-      ThemeData.dark().textTheme,
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: AppTextStyles.title,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
-      ),
-      cardTheme: CardThemeData(
-        color: AppColors.surfaceElevated,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accent,
-          foregroundColor: Colors.black,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-          elevation: 0,
+    ),
+
+    cardTheme: CardThemeData(
+      color: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(
+          color: AppColors.border,
         ),
       ),
-    );
-  }
+    ),
+
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.accent,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: AppColors.surfaceElevated,
+        disabledForegroundColor: AppColors.textMuted,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 12,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+        ),
+        textStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.textPrimary,
+        side: const BorderSide(
+          color: AppColors.border,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+        ),
+      ),
+    ),
+
+    dialogTheme: DialogThemeData(
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(
+          color: AppColors.border,
+        ),
+      ),
+    ),
+
+    dividerTheme: const DividerThemeData(
+      color: AppColors.border,
+      thickness: 1,
+      space: 1,
+    ),
+  );
+}
 }
 
 class SplashScreen extends StatefulWidget {
@@ -72,126 +130,87 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse;
-
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
 
-    Future.delayed(const Duration(milliseconds: 2600), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const HomeScreen(),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-        );
-      }
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const HomeScreen(),
+          transitionsBuilder: (_, animation, __, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 250),
+        ),
+      );
     });
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDeep,
-      body: AmbientBackground(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedBuilder(
-                animation: _pulse,
-                builder: (_, __) => Transform.scale(
-                  scale: 1.0 + _pulse.value * 0.1,
-                  child: Container(
-                    width: 130,
-                    height: 130,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          AppColors.accent.withValues(alpha: 0.35),
-                          Colors.transparent,
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.accent
-                              .withValues(alpha: 0.25 + _pulse.value * 0.25),
-                          blurRadius: 50,
-                          spreadRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: Container(
-                      margin: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: AppGradients.accent,
-                      ),
-                      child: const Icon(
-                        Icons.biotech_rounded,
-                        size: 52,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
+      backgroundColor: AppColors.bgBase,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColors.border,
                 ),
               ),
-              const SizedBox(height: 36),
-              const Text(
-                'Rib 9 Scanner',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.5,
-                ),
-              )
-                  .animate()
-                  .fadeIn(delay: 300.ms, duration: 700.ms)
-                  .slideY(begin: 0.25, end: 0),
-              const SizedBox(height: 10),
-              ShaderMask(
-                shaderCallback: (bounds) => AppGradients.accent.createShader(bounds),
-                child: const Text(
-                  'Lung & Rib 9 Overlap Analysis',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                    letterSpacing: 0.6,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ).animate().fadeIn(delay: 550.ms, duration: 700.ms),
-              const SizedBox(height: 64),
-              SizedBox(
-                width: 36,
-                height: 36,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.accent.withValues(alpha: 0.8),
-                  ),
-                ),
-              ).animate().fadeIn(delay: 900.ms, duration: 500.ms),
-            ],
-          ),
+              child: const Icon(
+                Icons.biotech_outlined,
+                size: 28,
+                color: AppColors.accent,
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            const Text(
+              'Rib 9 Scanner',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
+            const Text(
+              'Chest X-ray Analysis',
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.accent,
+              ),
+            ),
+          ],
         ),
       ),
     );

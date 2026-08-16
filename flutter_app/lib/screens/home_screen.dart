@@ -2,9 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:dotted_border/dotted_border.dart';
 import '../theme/app_theme.dart';
-import '../widgets/ambient_background.dart';
 import '../services/api_service.dart';
 import 'result_screen.dart';
 
@@ -20,108 +18,101 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _isAnalyzing = false;
   final ImagePicker _picker = ImagePicker();
   final ApiService _api = ApiService();
-  late AnimationController _shimmerController;
-
-  @override
-  void initState() {
-    super.initState();
-    _shimmerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _shimmerController.dispose();
-    super.dispose();
-  }
+  Uint8List? _selectedImageBytes;
 
   Future<void> _pickImage(ImageSource source) async {
     final XFile? picked = await _picker.pickImage(
       source: source,
       imageQuality: 95,
     );
+
     if (picked != null) {
-      setState(() => _selectedImage = picked);
+      final bytes = await picked.readAsBytes();
+
+      setState(() {
+        _selectedImage = picked;
+        _selectedImageBytes = bytes;
+      });
     }
   }
 
   void _showPickerSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.surfaceElevated,
-              AppColors.surface,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(12),
           ),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.textMuted.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(2),
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderStrong,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                const Text('เลือกแหล่งภาพ', style: AppTextStyles.title),
-                const SizedBox(height: 8),
-                Text(
-                  'อัปโหลดภาพ X-ray ทรวงอกเพื่อวิเคราะห์',
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  'Select image source',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                const Text(
+                  'Choose where to load the chest X-ray image from.',
                   style: AppTextStyles.caption,
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SourceButton(
-                        icon: Icons.photo_library_rounded,
-                        label: 'แกลเลอรี',
-                        gradient: AppGradients.accent,
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _pickImage(ImageSource.gallery);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: _SourceButton(
-                        icon: Icons.camera_alt_rounded,
-                        label: 'กล้อง',
-                        gradient: const LinearGradient(
-                          colors: [AppColors.accentPurple, AppColors.accentBlue],
-                        ),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _pickImage(ImageSource.camera);
-                        },
-                      ),
-                    ),
-                  ],
+
+                const SizedBox(height: 18),
+
+                _SourceButton(
+                  icon: Icons.photo_outlined,
+                  label: 'Choose from gallery',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+
+                const SizedBox(height: 10),
+
+                _SourceButton(
+                  icon: Icons.camera_alt_outlined,
+                  label: 'Take a photo',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.camera);
+                  },
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
   Future<void> _runAnalysis() async {
     if (_selectedImage == null) return;
@@ -162,61 +153,112 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _showError(String msg) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Row(
-          children: [
-            Icon(Icons.error_outline_rounded, color: AppColors.fail),
-            SizedBox(width: 12),
-            Text('วิเคราะห์ไม่สำเร็จ', style: AppTextStyles.title),
-          ],
+ void _showError(String msg) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(
+          color: AppColors.border,
         ),
-        content: Text(
-          msg.length > 200 ? '${msg.substring(0, 200)}...' : msg,
-          style: AppTextStyles.body,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('ตกลง',
-                style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+      ),
+      titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+
+      title: const Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.fail,
+            size: 20,
+          ),
+          SizedBox(width: 10),
+          Text(
+            'Analysis failed',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
-    );
-  }
+
+      content: Text(
+        msg.length > 200 ? '${msg.substring(0, 200)}...' : msg,
+        style: AppTextStyles.body,
+      ),
+
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.accent,
+          ),
+          child: const Text(
+            'Close',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDeep,
-      extendBodyBehindAppBar: true,
+      backgroundColor: AppColors.bgBase,
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.border,
+          ),
+        ),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                gradient: AppGradients.accent,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [AppDecorations.glow(AppColors.accent, blur: 16)],
+                color: AppColors.accent.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.biotech_rounded, color: Colors.black, size: 22),
+              child: const Icon(
+                Icons.biotech_outlined,
+                color: AppColors.accent,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Rib 9 Scanner', style: AppTextStyles.title),
-                Text('Lung Overlap Analysis',
-                    style: TextStyle(color: AppColors.accent, fontSize: 11)),
+                Text('Chest X-ray Analysis', style: AppTextStyles.title),
+                Text(
+                  'Rib 9 Scanner',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ],
             ),
           ],
@@ -235,401 +277,404 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const SizedBox(width: 8),
         ],
       ),
-      body: AmbientBackground(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeroCard(),
-                const SizedBox(height: 24),
-                _buildUploadArea(),
-                if (_selectedImage != null) ...[
-                  const SizedBox(height: 24),
-                  _buildImagePreview(),
-                ],
-                const SizedBox(height: 24),
-                _buildAnalyzeButton(),
-                const SizedBox(height: 28),
-                _buildCriteriaCard(),
-                const SizedBox(height: 20),
-                _buildLegend(),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroCard() {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          colors: [
-            AppColors.accent.withValues(alpha: 0.15),
-            AppColors.surfaceElevated.withValues(alpha: 0.85),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
-        boxShadow: [
-          AppDecorations.glow(AppColors.accent, blur: 24),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'AI Segmentation',
-                  style: AppTextStyles.sectionLabel.copyWith(color: AppColors.accent),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'วิเคราะห์การทับซ้อน\nซี่โครงที่ 9 กับปอด',
-                  style: AppTextStyles.display,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'อัปโหลดภาพ X-ray แล้วระบบจะประเมินว่าภาพผ่านเกณฑ์ใช้งานต่อหรือไม่',
-                  style: AppTextStyles.body.copyWith(fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  AppColors.accent.withValues(alpha: 0.25),
-                  Colors.transparent,
-                ],
+      body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 1440,
               ),
-              border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_selectedImage == null)
+                      _buildUploadArea()
+                    else
+                      _buildImagePreview(),
+
+                    const SizedBox(height: 16),
+                    _buildAnalyzeButton(),
+                    const SizedBox(height: 20),
+                    _buildCriteriaCard(),
+                    const SizedBox(height: 16),
+                    _buildLegend(),
+                  ],
+                ),
+              ),
             ),
-            child: const Icon(Icons.monitor_heart_outlined,
-                color: AppColors.accent, size: 36),
           ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.15, end: 0);
+        ),
+      );
   }
 
 Widget _buildUploadArea() {
   return GestureDetector(
     onTap: _showPickerSheet,
-    child: AnimatedBuilder(
-      animation: _shimmerController,
-      builder: (_, __) {
-        return DottedBorder(
-          color: AppColors.accent.withValues(
-            alpha: 0.35 + _shimmerController.value * 0.25,
-          ),
-          strokeWidth: 2,
-          dashPattern: const [12, 7],
-          borderType: BorderType.RRect,
-          radius: const Radius.circular(26),
-          child: Container(
-            height: 170,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.accent.withValues(alpha: 0.06),
-                  AppColors.surface.withValues(alpha: 0.5),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+    child: Container(
+      height: 210,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppColors.borderStrong,
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.border,
+                ),
+              ),
+              child: const Icon(
+                Icons.upload_rounded,
+                color: AppColors.textSecondary,
+                size: 26,
               ),
             ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 68,
-                    height: 68,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: AppGradients.accent,
-                      boxShadow: [
-                        AppDecorations.glow(AppColors.accent, blur: 20),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.add_rounded,
-                      color: Colors.black,
-                      size: 34,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'แตะเพื่ออัปโหลดภาพ X-ray',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'รองรับ JPG · JPEG · PNG',
-                    style: AppTextStyles.caption,
-                  ),
-                ],
+            const SizedBox(height: 14),
+            const Text(
+              'Select a chest X-ray image',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 5),
+            const Text(
+              'Supported formats: DICOM, PNG, JPG',
+              style: AppTextStyles.caption,
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              height: 38,
+              child: ElevatedButton(
+                onPressed: _showPickerSheet,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                child: const Text(
+                  'Browse Files',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     ),
-  ).animate().fadeIn(delay: 150.ms, duration: 600.ms).slideY(
-        begin: 0.12,
-        end: 0,
-      );
+  );
 }
 
-  Widget _buildImagePreview() {
-    return Stack(
+Widget _buildImagePreview() {
+  return Container(
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color: AppColors.border,
+        width: 1,
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          height: MediaQuery.of(context).size.height * 0.55,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
-            boxShadow: [
-              AppDecorations.glow(AppColors.accent, blur: 24),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Selected image',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Ready for analysis',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _showPickerSheet,
+                icon: const Icon(
+                  Icons.swap_horiz_rounded,
+                  size: 17,
+                ),
+                label: const Text('Change'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.accent,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                ),
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: FutureBuilder<Uint8List>(
-              future: _selectedImage!.readAsBytes(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.memory(snapshot.data!, fit: BoxFit.contain),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.5),
-                            ],
-                            begin: Alignment.center,
-                            end: Alignment.bottomCenter,
-                          ),
+        ),
+
+        const Divider(
+          height: 1,
+          thickness: 1,
+          color: AppColors.border,
+        ),
+
+        Container(
+          color: const Color(0xFFF3F5F7),
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 560,
+                maxHeight: 520,
+              ),
+              child: _selectedImageBytes != null
+                  ? Image.memory(
+                      _selectedImageBytes!,
+                      fit: BoxFit.contain,
+                      gaplessPlayback: true,
+                      filterQuality: FilterQuality.medium,
+                    )
+                  : const SizedBox(
+                      height: 420,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.accent,
                         ),
                       ),
-                    ],
-                  );
-                }
-                return Container(
-                  color: AppColors.surface,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        Positioned(
-          top: 12,
-          left: 12,
-          child: _FloatingBadge(
-            icon: Icons.check_circle_rounded,
-            label: 'พร้อมวิเคราะห์',
-            color: AppColors.pass,
-          ),
-        ),
-        Positioned(
-          top: 12,
-          right: 12,
-          child: GestureDetector(
-            onTap: _showPickerSheet,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: AppDecorations.glass(radius: 12),
-              child: const Icon(Icons.swap_horiz_rounded,
-                  color: AppColors.textPrimary, size: 20),
             ),
           ),
         ),
       ],
-    ).animate().fadeIn(duration: 450.ms).scale(
-          begin: const Offset(0.95, 0.95),
-          end: const Offset(1, 1),
-          curve: Curves.easeOutBack,
-        );
-  }
+    ),
+  );
+}
 
-  Widget _buildAnalyzeButton() {
-    final bool canAnalyze = _selectedImage != null && !_isAnalyzing;
+Widget _buildAnalyzeButton() {
+  final bool canAnalyze = _selectedImage != null && !_isAnalyzing;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: 58,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: canAnalyze ? AppGradients.accentVertical : null,
-        color: canAnalyze ? null : AppColors.surfaceElevated,
-        boxShadow: canAnalyze
-            ? [
-                AppDecorations.glow(AppColors.accent, blur: 28),
-                BoxShadow(
-                  color: AppColors.accent.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: canAnalyze ? _runAnalysis : null,
-          child: Center(
-            child: _isAnalyzing
-                ? const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                        ),
-                      ),
-                      SizedBox(width: 14),
-                      Text(
-                        'กำลังวิเคราะห์...',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.auto_awesome_rounded,
-                        color: canAnalyze ? Colors.black : AppColors.textMuted,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        _selectedImage != null
-                            ? 'เริ่มวิเคราะห์'
-                            : 'เลือกภาพก่อน',
-                        style: TextStyle(
-                          color: canAnalyze ? Colors.black : AppColors.textMuted,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
+  return Align(
+    alignment: Alignment.centerRight,
+    child: SizedBox(
+      width: 180,
+      height: 42,
+      child: ElevatedButton(
+        onPressed: canAnalyze ? _runAnalysis : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.accent,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.surfaceElevated,
+          disabledForegroundColor: AppColors.textMuted,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
           ),
         ),
+        child: _isAnalyzing
+            ? const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Analyzing...',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.analytics_outlined,
+                    size: 17,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Analyze',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
       ),
-    ).animate().fadeIn(delay: 300.ms, duration: 500.ms);
-  }
+    ),
+  );
+}
 
   Widget _buildCriteriaCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppDecorations.glass(borderColor: AppColors.accentBlue, radius: 22),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.accentBlue.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.rule_rounded,
-                    color: AppColors.accentBlue, size: 18),
-              ),
-              const SizedBox(width: 12),
-              const Text('เกณฑ์การผ่าน', style: AppTextStyles.title),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _CriteriaRow(
-            icon: Icons.verified_rounded,
-            color: AppColors.pass,
-            text: 'Conf ≥ 0.89 และ IoU > 0.85 → ผ่าน ใช้ภาพต่อได้',
-          ),
-          const SizedBox(height: 10),
-          _CriteriaRow(
-            icon: Icons.block_rounded,
-            color: AppColors.fail,
-            text: 'Conf ≥ 0.89 แต่ IoU ≤ 0.85 → ไม่ผ่าน',
-          ),
-          const SizedBox(height: 10),
-          _CriteriaRow(
-            icon: Icons.rate_review_rounded,
-            color: AppColors.review,
-            text: 'Conf < 0.95 → ต้องตรวจสอบด้วยตา (มี box/tag)',
-          ),
-        ],
+  return Container(
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color: AppColors.border,
+        width: 1,
       ),
-    ).animate().fadeIn(delay: 450.ms, duration: 500.ms);
-  }
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Header
+        const Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+          child: Text(
+            'Analysis criteria',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+
+        const Divider(
+          height: 1,
+          thickness: 1,
+          color: AppColors.border,
+        ),
+
+        _CriteriaRow(
+          status: 'PASS',
+          color: AppColors.pass,
+          criteria: 'Confidence ≥ 0.89',
+          result: 'IoU > 0.85',
+          description: 'Image can be used for further assessment',
+        ),
+
+        const Divider(
+          height: 1,
+          thickness: 1,
+          indent: 16,
+          endIndent: 16,
+          color: AppColors.border,
+        ),
+
+        _CriteriaRow(
+          status: 'FAIL',
+          color: AppColors.fail,
+          criteria: 'Confidence ≥ 0.89',
+          result: 'IoU ≤ 0.85',
+          description: 'Image does not meet the acceptance criteria',
+        ),
+
+        const Divider(
+          height: 1,
+          thickness: 1,
+          indent: 16,
+          endIndent: 16,
+          color: AppColors.border,
+        ),
+
+        _CriteriaRow(
+          status: 'REVIEW',
+          color: AppColors.review,
+          criteria: 'Confidence < 0.89',
+          result: 'Manual review',
+          description: 'Visual verification is required',
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildLegend() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: AppDecorations.glass(radius: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('สีบนภาพผลลัพธ์', style: AppTextStyles.title),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _LegendItem(color: AppColors.lungBlue, label: 'ปอด'),
-              _LegendItem(color: AppColors.ribRed, label: 'Rib 9'),
-              _LegendItem(color: AppColors.overlapMagenta, label: 'ทับซ้อน'),
-            ],
-          ),
-        ],
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 12,
+    ),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color: AppColors.border,
       ),
-    ).animate().fadeIn(delay: 550.ms, duration: 500.ms);
-  }
+    ),
+    child: Row(
+      children: [
+        const Text(
+          'Overlay legend',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(width: 24),
+
+        const _LegendItem(
+          color: AppColors.lungBlue,
+          label: 'Lung',
+        ),
+
+        const SizedBox(width: 20),
+
+        const _LegendItem(
+          color: AppColors.ribRed,
+          label: 'Rib 9',
+        ),
+
+        const SizedBox(width: 20),
+
+        const _LegendItem(
+          color: AppColors.overlapMagenta,
+          label: 'Overlap',
+        ),
+      ],
+    ),
+  );
+}
 
   void _showSettings() {
     showDialog(
@@ -644,43 +689,47 @@ Widget _buildUploadArea() {
 class _SourceButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Gradient gradient;
   final VoidCallback onTap;
 
   const _SourceButton({
     required this.icon,
     required this.label,
-    required this.gradient,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.25),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+    return SizedBox(
+      height: 48,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textPrimary,
+          backgroundColor: AppColors.surface,
+          side: const BorderSide(
+            color: AppColors.border,
+          ),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Icon(icon, color: Colors.black, size: 32),
-            const SizedBox(height: 10),
+            Icon(
+              icon,
+              color: AppColors.textSecondary,
+              size: 19,
+            ),
+            const SizedBox(width: 12),
             Text(
               label,
               style: const TextStyle(
-                color: Colors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -689,39 +738,92 @@ class _SourceButton extends StatelessWidget {
     );
   }
 }
-
-class _FloatingBadge extends StatelessWidget {
-  final IconData icon;
-  final String label;
+class _CriteriaRow extends StatelessWidget {
+  final String status;
   final Color color;
+  final String criteria;
+  final String result;
+  final String description;
 
-  const _FloatingBadge({
-    required this.icon,
-    required this.label,
+  const _CriteriaRow({
+    required this.status,
     required this.color,
+    required this.criteria,
+    required this.result,
+    required this.description,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-        boxShadow: [AppDecorations.glow(color, blur: 12)],
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          SizedBox(
+            width: 72,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          Expanded(
+            flex: 2,
+            child: Text(
+              criteria,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          Expanded(
+            flex: 2,
+            child: Text(
+              result,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          Expanded(
+            flex: 3,
+            child: Text(
+              description,
+              style: AppTextStyles.caption,
             ),
           ),
         ],
@@ -730,64 +832,39 @@ class _FloatingBadge extends StatelessWidget {
   }
 }
 
-class _CriteriaRow extends StatelessWidget {
-  final IconData icon;
+class _LegendItem extends StatelessWidget {
   final Color color;
-  final String text;
+  final String label;
 
-  const _CriteriaRow({
-    required this.icon,
+  const _LegendItem({
     required this.color,
-    required this.text,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 18),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(text, style: AppTextStyles.body.copyWith(fontSize: 13)),
-        ),
-      ],
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-
-  const _LegendItem({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 28,
-          height: 28,
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.25),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color.withValues(alpha: 0.6)),
-            boxShadow: [AppDecorations.glow(color, blur: 8)],
-          ),
-          child: Center(
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
+            color: color,
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(height: 6),
-        Text(label, style: AppTextStyles.caption),
+
+        const SizedBox(width: 6),
+
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -817,67 +894,163 @@ class _SettingsDialogState extends State<_SettingsDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      title: const Text('ตั้งค่า Server', style: AppTextStyles.title),
-      content: Column(
+Widget build(BuildContext context) {
+  return AlertDialog(
+    backgroundColor: AppColors.surface,
+    surfaceTintColor: Colors.transparent,
+    elevation: 8,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+      side: const BorderSide(
+        color: AppColors.border,
+      ),
+    ),
+
+    titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+    contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+    actionsPadding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+
+    title: const Text(
+      'Server settings',
+      style: TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+
+    content: SizedBox(
+      width: 420,
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('FastAPI Server URL', style: AppTextStyles.caption),
-          const SizedBox(height: 8),
+          const Text(
+            'FastAPI Server URL',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
           TextField(
             controller: _controller,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 13,
+            ),
             decoration: InputDecoration(
               hintText: 'http://localhost:8000',
-              hintStyle: const TextStyle(color: AppColors.textMuted),
+              hintStyle: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 13,
+              ),
+
               filled: true,
-              fillColor: AppColors.surface,
+              fillColor: AppColors.bgBase,
+
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.accent.withValues(alpha: 0.3)),
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(
+                  color: AppColors.border,
+                ),
               ),
+
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.accent.withValues(alpha: 0.2)),
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(
+                  color: AppColors.border,
+                ),
               ),
+
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.accent),
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(
+                  color: AppColors.accent,
+                  width: 1.5,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Android emulator: http://10.0.2.2:8000\n'
-            'Physical device: http://<your-lan-ip>:8000\n'
-            'Desktop/iOS: http://localhost:8000',
-            style: AppTextStyles.caption.copyWith(height: 1.6),
+
+          const SizedBox(height: 14),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.bgBase,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: AppColors.border,
+              ),
+            ),
+            child: const Text(
+              'Android emulator: http://10.0.2.2:8000\n'
+              'Physical device: http://<your-lan-ip>:8000\n'
+              'Desktop / iOS: http://localhost:8000',
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 11,
+                height: 1.6,
+              ),
+            ),
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('ยกเลิก',
-              style: TextStyle(color: AppColors.textSecondary)),
+    ),
+
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.textSecondary,
         ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.accent,
-            foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: const Text(
+          'Cancel',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
           ),
+        ),
+      ),
+
+      SizedBox(
+        height: 38,
+        child: ElevatedButton(
           onPressed: () {
             widget.api.baseUrl = _controller.text.trim();
             Navigator.pop(context);
           },
-          child: const Text('บันทึก', style: TextStyle(fontWeight: FontWeight.w700)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.accent,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 18,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          child: const Text(
+            'Save',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }

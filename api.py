@@ -923,12 +923,12 @@ def create_analysis_response(
                 box,
             )
 
-    result_image = draw_verdict_overlay(
-        result_image,
-        analysis["verdict"],
-        analysis["rib_confidence"],
-        analysis["overlap_ratio"],
-    )
+    #result_image = draw_verdict_overlay(
+    #    result_image,
+    #    analysis["verdict"],
+    #    analysis["rib_confidence"],
+    #    analysis["overlap_ratio"],
+    #)
 
     result_image_base64 = encode_image_base64(
         result_image

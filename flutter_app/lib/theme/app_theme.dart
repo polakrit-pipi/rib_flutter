@@ -2,53 +2,77 @@ import 'package:flutter/material.dart';
 
 /// Shared design tokens for the Rib 9 Scanner app.
 abstract final class AppColors {
-  static const bgDeep = Color(0xFF060D18);
-  static const bgBase = Color(0xFF0A1628);
-  static const surface = Color(0xFF111E2E);
-  static const surfaceElevated = Color(0xFF1A2A3D);
-  static const surfaceGlass = Color(0xCC152030);
+  // Main app surfaces
+  static const bgDeep = Color(0xFFF5F7FA);
+  static const bgBase = Color(0xFFF8FAFC);
 
-  static const textPrimary = Color(0xFFF0F7FC);
-  static const textSecondary = Color(0xFF94AFC4);
-  static const textMuted = Color(0xFF5A7590);
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceElevated = Color(0xFFF9FAFB);
+  static const surfaceGlass = Color(0xFFFFFFFF);
 
-  static const accent = Color(0xFF00E5D4);
-  static const accentBlue = Color(0xFF3B9EFF);
-  static const accentPurple = Color(0xFF8B7CFF);
+  // Borders / dividers
+  static const border = Color(0xFFDDE3EA);
+  static const borderStrong = Color(0xFFCBD3DD);
 
-  static const pass = Color(0xFF00E676);
-  static const passDark = Color(0xFF00A152);
-  static const fail = Color(0xFFFF5252);
-  static const failDark = Color(0xFFD32F2F);
-  static const review = Color(0xFFFFB74D);
-  static const reviewDark = Color(0xFFE65100);
+  // Text
+  static const textPrimary = Color(0xFF182235);
+  static const textSecondary = Color(0xFF536176);
+  static const textMuted = Color(0xFF8491A3);
 
-  static const lungBlue = Color(0xFF2196F3);
-  static const ribRed = Color(0xFFFF5252);
-  static const overlapMagenta = Color(0xFFE040FB);
+  // Primary clinical accent
+  static const accent = Color(0xFF275BB5);
+  static const accentBlue = Color(0xFF3568C8);
+  static const accentPurple = Color(0xFF5A67A8);
+
+  // Status
+  static const pass = Color(0xFF2E8B57);
+  static const passDark = Color(0xFF216B42);
+
+  static const fail = Color(0xFFC84646);
+  static const failDark = Color(0xFFA93232);
+
+  static const review = Color(0xFFC58A2A);
+  static const reviewDark = Color(0xFF9A691B);
+
+  // Segmentation overlay colors
+  static const lungBlue = Color(0xFF4F83CC);
+  static const ribRed = Color(0xFFD95F59);
+  static const overlapMagenta = Color(0xFF8A67A5);
 }
 
 abstract final class AppGradients {
   static const accent = LinearGradient(
-    colors: [Color(0xFF00E5D4), Color(0xFF3B9EFF)],
+    colors: [
+      Color(0xFF3568C8),
+      Color(0xFF275BB5),
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const accentVertical = LinearGradient(
-    colors: [Color(0xFF00E5D4), Color(0xFF0099E5)],
+    colors: [
+      Color(0xFF3568C8),
+      Color(0xFF275BB5),
+    ],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static LinearGradient passGlow(Color c) => LinearGradient(
-        colors: [c.withValues(alpha: 0.35), c.withValues(alpha: 0.05)],
+        colors: [
+          c.withValues(alpha: 0.08),
+          c.withValues(alpha: 0.02),
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       );
 
   static const cardSurface = LinearGradient(
-    colors: [Color(0xFF1E3048), Color(0xFF142030)],
+    colors: [
+      Color(0xFFFFFFFF),
+      Color(0xFFF8FAFC),
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -57,77 +81,71 @@ abstract final class AppGradients {
 abstract final class AppDecorations {
   static BoxDecoration glass({
     Color? borderColor,
-    double radius = 24,
+    double radius = 10,
     List<Color>? gradientColors,
   }) {
     return BoxDecoration(
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(radius),
-      gradient: LinearGradient(
-        colors: gradientColors ??
-            [
-              Colors.white.withValues(alpha: 0.08),
-              Colors.white.withValues(alpha: 0.02),
-            ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
       border: Border.all(
-        color: (borderColor ?? Colors.white).withValues(alpha: 0.12),
+        color: borderColor ?? AppColors.border,
         width: 1,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.35),
-          blurRadius: 24,
-          offset: const Offset(0, 8),
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
       ],
     );
   }
 
   static BoxShadow glow(Color color, {double blur = 32}) => BoxShadow(
-        color: color.withValues(alpha: 0.28),
-        blurRadius: blur,
-        spreadRadius: 0,
+        color: Colors.black.withValues(alpha: 0.04),
+        blurRadius: 8,
+        offset: const Offset(0, 2),
       );
 }
 
 abstract final class AppTextStyles {
   static const display = TextStyle(
     color: AppColors.textPrimary,
-    fontSize: 26,
-    fontWeight: FontWeight.w800,
-    letterSpacing: 0.2,
-    height: 1.2,
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0,
+    height: 1.25,
   );
 
   static const title = TextStyle(
     color: AppColors.textPrimary,
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 0.1,
-    height: 1.25,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
+    height: 1.3,
   );
 
   static const sectionLabel = TextStyle(
     color: AppColors.textSecondary,
     fontSize: 12,
     fontWeight: FontWeight.w600,
-    letterSpacing: 1.0,
+    letterSpacing: 0.2,
     height: 1.3,
   );
 
   static const body = TextStyle(
     color: AppColors.textSecondary,
     fontSize: 14,
-    letterSpacing: 0.15,
-    height: 1.55,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.45,
   );
 
   static const caption = TextStyle(
     color: AppColors.textMuted,
     fontSize: 12,
-    letterSpacing: 0.15,
-    height: 1.45,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    height: 1.4,
   );
 }
