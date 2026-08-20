@@ -623,11 +623,25 @@ def run_model_analysis(
 
     rib_result = model_rib(image)[0]
 
+    # Visual masks:
+    # - Rib 1-8 use the same color
+    # - Rib 9-10 use the same (highlight) color
+    rib_mask_1_to_8 = np.zeros(
+        (height, width),
+        dtype=np.uint8,
+    )
+
+    rib_mask_9_to_10 = np.zeros(
+        (height, width),
+        dtype=np.uint8,
+    )
+
     full_rib_mask = np.zeros(
         (height, width),
         dtype=np.uint8,
     )
 
+    # Keep Rib 9 scoring masks exactly separate from visualization.
     rib_mask_class_8 = np.zeros(
         (height, width),
         dtype=np.uint8,
@@ -641,8 +655,14 @@ def run_model_analysis(
     rib_detected = False
     rib_confidences = []
     rib_boxes = []
+    rib_labels = []
+    rib_instances = []
 
-    target_rib_classes = {8, 18}
+    # Mapping confirmed by the model layout:
+    # 0..9   = left Rib 1..10
+    # 10..19 = right Rib 1..10
+    all_rib_classes = set(range(20))
+    scoring_rib_classes = {8, 18}  # Rib 9 left/right only
 
     if (
         rib_result.masks is not None
@@ -660,18 +680,14 @@ def run_model_analysis(
                 .item()
             )
 
-            if class_id not in target_rib_classes:
+            if class_id not in all_rib_classes:
                 continue
-
-            rib_detected = True
 
             confidence = float(
                 rib_result.boxes.conf[index]
                 .cpu()
                 .item()
             )
-
-            rib_confidences.append(confidence)
 
             raw_rib_mask = (
                 rib_result.masks.data[index]
@@ -686,30 +702,81 @@ def run_model_analysis(
                 ) > 0.5
             ).astype(np.uint8)
 
+            # Rib number is 1..10 on both sides.
+            rib_number = (class_id % 10) + 1
+
+            rib_instances.append({
+                "number": rib_number,
+                "mask": resized_rib_mask.copy(),
+            })
+
             full_rib_mask = np.maximum(
                 full_rib_mask,
                 resized_rib_mask,
             )
 
-            if class_id == 8:
-                rib_mask_class_8 = np.maximum(
-                    rib_mask_class_8,
+            if 1 <= rib_number <= 8:
+                rib_mask_1_to_8 = np.maximum(
+                    rib_mask_1_to_8,
+                    resized_rib_mask,
+                )
+            else:
+                # Rib 9 and Rib 10 intentionally share one color.
+                rib_mask_9_to_10 = np.maximum(
+                    rib_mask_9_to_10,
                     resized_rib_mask,
                 )
 
-            elif class_id == 18:
-                rib_mask_class_18 = np.maximum(
-                    rib_mask_class_18,
-                    resized_rib_mask,
+            # Save a label position from the segmentation-mask centroid.
+            mask_points = np.argwhere(resized_rib_mask == 1)
+
+            if mask_points.size > 0:
+                y_min = int(mask_points[:, 0].min())
+                y_max = int(mask_points[:, 0].max())
+                x_min = int(mask_points[:, 1].min())
+                x_max = int(mask_points[:, 1].max())
+
+                # class 0-9 = ฝั่งซ้ายของภาพ
+                if class_id < 10:
+                    # เลขไว้ขวาบนของ rib
+                    label_x = x_max - 20
+                    label_y = y_min + 30
+
+                else:
+                    # class 10-19 = ฝั่งขวาของภาพ
+                    # เลขไว้ซ้ายบนของ rib
+                    label_x = x_min + 10
+                    label_y = y_min + 30
+
+                rib_labels.append({
+                    "number": rib_number,
+                    "x": label_x,
+                    "y": label_y,
+                })
+
+            # Scoring / confidence still uses ONLY Rib 9.
+            if class_id in scoring_rib_classes:
+                rib_detected = True
+                rib_confidences.append(confidence)
+
+                if class_id == 8:
+                    rib_mask_class_8 = np.maximum(
+                        rib_mask_class_8,
+                        resized_rib_mask,
+                    )
+
+                elif class_id == 18:
+                    rib_mask_class_18 = np.maximum(
+                        rib_mask_class_18,
+                        resized_rib_mask,
+                    )
+
+                rib_box = (
+                    rib_result.boxes.xyxy[index]
+                    .cpu()
+                    .numpy()
                 )
-
-            rib_box = (
-                rib_result.boxes.xyxy[index]
-                .cpu()
-                .numpy()
-            )
-
-            rib_boxes.append(rib_box)
+                rib_boxes.append(rib_box)
 
     rib_confidence = (
         min(rib_confidences)
@@ -720,6 +787,10 @@ def run_model_analysis(
     return {
         "lung_mask": lung_mask,
         "full_rib_mask": full_rib_mask,
+        "rib_mask_1_to_8": rib_mask_1_to_8,
+        "rib_mask_9_to_10": rib_mask_9_to_10,
+        "rib_instances": rib_instances,
+        "rib_labels": rib_labels,
         "rib_mask_class_8": rib_mask_class_8,
         "rib_mask_class_18": rib_mask_class_18,
         "rib_detected": rib_detected,
@@ -881,29 +952,25 @@ def create_analysis_response(
     """
 
     lung_mask = analysis["lung_mask"]
-    full_rib_mask = analysis["full_rib_mask"]
-
-    visual_overlap_mask = (
-        (lung_mask == 1)
-        & (full_rib_mask == 1)
-    )
+    rib_mask_1_to_8 = analysis["rib_mask_1_to_8"]
+    rib_mask_9_to_10 = analysis["rib_mask_9_to_10"]
 
     overlay = original_image.copy()
 
-    # น้ำเงิน = lung
+    # Blue = lung
     overlay[
         lung_mask == 1
     ] = [255, 0, 0]
 
-    # แดง = rib
+    # Green = Rib 1-8 (same color for all)
     overlay[
-        full_rib_mask == 1
-    ] = [0, 0, 255]
+        rib_mask_1_to_8 == 1
+    ] = [90, 90, 90]
 
-    # ม่วง = overlap
+    # Red = Rib 9-10 (same color for both)
     overlay[
-        visual_overlap_mask == 1
-    ] = [255, 0, 255]
+        rib_mask_9_to_10 == 1
+    ] = [0, 0, 255]
 
     result_image = cv2.addWeighted(
         overlay,
@@ -912,6 +979,63 @@ def create_analysis_response(
         0.6,
         0,
     )
+
+    # Draw outline ของแต่ละ Rib แยกกัน
+    for rib in analysis["rib_instances"]:
+        rib_number = rib["number"]
+        rib_mask = rib["mask"]
+
+        contours, _ = cv2.findContours(
+            rib_mask,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE,
+        )
+
+        # Rib 1-8 = เขียว
+        if 1 <= rib_number <= 8:
+            outline_color = (230, 230, 230)
+
+        # Rib 9-10 = แดง
+        else:
+            outline_color = (0, 0, 255)
+
+        cv2.drawContours(
+            result_image,
+            contours,
+            -1,
+            outline_color,
+            2,
+            cv2.LINE_AA,
+        )
+    
+
+    # Draw Rib number labels on both sides.
+    # White text + black outline keeps the numbers readable on X-ray images.
+    for rib_label in analysis["rib_labels"]:
+        text = str(rib_label["number"])
+        position = (rib_label["x"], rib_label["y"])
+
+        cv2.putText(
+            result_image,
+            text,
+            position,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1.15,
+            (0, 0, 0),
+            5,
+            cv2.LINE_AA,
+        )
+
+        cv2.putText(
+            result_image,
+            text,
+            position,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1.15,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
 
     if (
         analysis["rib_detected"]
